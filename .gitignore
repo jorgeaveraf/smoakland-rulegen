@@ -1,0 +1,71 @@
+# ---------------------------------
+# Python
+# ---------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs & editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Byte-compiled and package builds
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+MANIFEST
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# ---------------------------------
+# Data and outputs
+# ---------------------------------
+# Sensitive or large local datasets
+data/*.csv
+data/*.parquet
+data/*.xlsx
+data/*.xls
+
+# Intermediate / generated outputs
+out/
+reports/
+logs/
+tmp/
+temp/
+.cache/
+.DS_Store
+
+# TextFSM generated intermediates
+*.fsm
+*.fsm~
+*.tmp
+
+# ---------------------------------
+# Rulebook artifacts
+# ---------------------------------
+# Generated _rules.py files go here, but you can allowlist specific ones if needed
+out/*.py
+
+# ---------------------------------
+# OS / Misc
+# ---------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini

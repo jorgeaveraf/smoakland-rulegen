@@ -1,0 +1,9 @@
+
+[project]
+name = "smoakland-rulegen"
+version = "0.1.0"
+description = "Offline TextFSM-based rule generator for expense categorization."
+dependencies = [
+    "pandas",
+    "textfsm",
+]
