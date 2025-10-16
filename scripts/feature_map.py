@@ -1,5 +1,4 @@
 FEATURES = {
-    # Include 'Bank/CC #' to help distinguish specific cards (e.g., CC 9551 vs CC 8305)
     "payee_vendor":     ["Description", "Extended Description", "Bank/CC #"],
     "cf_account":       ["Payee/Vendor"],
     "dashboard_1":      ["Payee/Vendor"],
