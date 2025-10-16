@@ -1,20 +1,20 @@
-
 FEATURES = {
-    "payee_vendor":     ["bank_account","subentity","bank_cc_num","description","extended_description"],
-    "cf_account":       ["payee_vendor"],
-    "dashboard_1":      ["payee_vendor"],
-    "budget_owner":     ["dashboard_1"],
-    "entity_qbo":       ["payee_vendor","bank_cc_num"],
-    "qbo_account":      ["payee_vendor","entity_qbo"],
-    "qbo_sub_account":  ["bank_cc_num","entity_qbo"],
+    # Include 'Bank/CC #' to help distinguish specific cards (e.g., CC 9551 vs CC 8305)
+    "payee_vendor":     ["Description", "Extended Description", "Bank/CC #"],
+    "cf_account":       ["Payee/Vendor"],
+    "dashboard_1":      ["Payee/Vendor"],
+    "budget_owner":     ["1st of Dashboards"],
+    "entity_qbo":       ["Payee/Vendor", "Bank/CC #"],
+    "qbo_account":      ["Payee/Vendor", "Entity"],
+    "qbo_sub_account":  ["Bank/CC #", "Entity"],
 }
 
 TARGET = {
-    "payee_vendor":     "payee_vendor",
-    "cf_account":       "cf_account",
-    "dashboard_1":      "dashboard_1",
-    "budget_owner":     "budget_owner",
-    "entity_qbo":       "entity_qbo",
-    "qbo_account":      "qbo_account",
-    "qbo_sub_account":  "qbo_sub_account",
+    "payee_vendor":     "Payee/Vendor",
+    "cf_account":       "CF Account",
+    "dashboard_1":      "1st of Dashboards",
+    "budget_owner":     "Budget Owner",
+    "entity_qbo":       "Entity",
+    "qbo_account":      "QBO Account",
+    "qbo_sub_account":  "QBO Sub Account",
 }

@@ -9,12 +9,14 @@ def normalize_text(s: str) -> str:
     return " ".join(s.split())
 
 def build_search_text(df: pd.DataFrame, cols: list[str]) -> pd.Series:
-    parts = []
-    for c in cols:
-        parts.append(df.get(c, "").fillna("").astype(str))
     text = pd.Series([""] * len(df), dtype="string")
-    for p in parts:
-        text = text.str.cat(p, sep=" | ")
+    for c in cols:
+        if c in df.columns:
+            s = df[c].astype("string").fillna("")
+        else:
+            # Missing column, fill with empty strings
+            s = pd.Series([""] * len(df), dtype="string")
+        text = text.str.cat(s, sep=" | ")
     return text.map(normalize_text)
 
 def safe_token(t: str) -> str:

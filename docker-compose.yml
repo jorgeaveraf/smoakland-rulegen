@@ -1,0 +1,12 @@
+services:
+  rulegen:
+    build: .
+    image: smoakland-rulegen:latest
+    working_dir: /app
+    volumes:
+      - ./:/app           
+      - ./data:/app/data    
+      - ./out:/app/out 
+      - ./templates:/app/templates
+    tty: true
+    stdin_open: true
