@@ -1,0 +1,23 @@
+# TextFSM template for budget_owner
+Value LABEL (NO\ DEPARTMENT|TAXES|NEW\ YORK)
+Value CHANNA (FINANCE)
+Value DENNIS (MARKETING)
+Value DEREK (SUBLIME)
+Value DOUG (TECHNOLOGY)
+Value ERIC (DRIVER\ OPERATIONS\ \-\ BAY)
+Value JAY (EXECUTIVE)
+Value LINDA (ADMINISTRATION)
+Value RAJ (DRIVER\ OPERATIONS\ \-\ SACRAMENTO)
+Value WENDY (INVENTORY\ \-\ WHOLESALE)
+
+Start
+  ^.*${LABEL}.* -> Record
+  ^.*${CHANNA}.* -> Record
+  ^.*${DENNIS}.* -> Record
+  ^.*${DEREK}.* -> Record
+  ^.*${DOUG}.* -> Record
+  ^.*${ERIC}.* -> Record
+  ^.*${JAY}.* -> Record
+  ^.*${LINDA}.* -> Record
+  ^.*${RAJ}.* -> Record
+  ^.*${WENDY}.* -> Record
