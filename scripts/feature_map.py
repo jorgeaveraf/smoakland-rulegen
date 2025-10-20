@@ -4,7 +4,7 @@ FEATURES = {
     "dashboard_1":      ["Payee/Vendor"],
     "budget_owner":     ["1st of Dashboards"],
     "entity_qbo":       ["Payee/Vendor", "Bank/CC #"],
-    "qbo_account":      ["Payee/Vendor", "Entity"],
+    "qbo_account":      ["Payee/Vendor", "Bank/CC #", "Entity"],
     "qbo_sub_account":  ["Bank/CC #", "Entity"],
 }
 

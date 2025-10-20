@@ -61,12 +61,31 @@ def needs_word_boundaries(pattern_source: str) -> bool:
 
 def build_runtime_regex_src(raw_alt: str) -> str:
     """
-    Wrap alternants with (?i) and proper boundaries.
+    Wraps alternation with (?i) and proper boundaries.
+    - Supports the shorthand 'A::B::C' (AND) by converting it to lookaheads.
+    - If lookaheads '(?=...)' or '.*' already exist, outer boundaries are not added.
     """
-    if needs_word_boundaries(raw_alt):
-        return rf"(?i)\b(?:{raw_alt})\b"
+    src = raw_alt.strip()
+
+    # 1) Support for shorthand 'A::B::C' inside Value(...) parentheses
+    #    (e.g. Value FOO ((A|AA)::(B|BB)) ).
+    if "::" in src and src.startswith("(") and src.endswith(")"):
+        inner = src[1:-1]  # remove outer parentheses
+        groups = [g.strip() for g in inner.split("::") if g.strip()]
+        if len(groups) >= 2:
+            # Build (?=.*(?:A|AA))(?=.*(?:B|BB))... .*
+            lookaheads = "".join(rf"(?=.*(?:{g}))" for g in groups)
+            src = lookaheads + r".*"
+
+    # 2) If the pattern already uses lookaheads or is “global” with .*, skip outer boundaries
+    if "(?=" in src or ".*" in src:
+        return rf"(?i)(?:{src})"
+
+    # 3) Boundary heuristic for “word-like” alternants
+    if needs_word_boundaries(src):
+        return rf"(?i)\b(?:{src})\b"
     else:
-        return rf"(?i)(?<![A-Z0-9])(?:{raw_alt})(?![A-Z0-9])"
+        return rf"(?i)(?<![A-Z0-9])(?:{src})(?![A-Z0-9])"
 
 def emit_rules(rulebook: str, templates_dir: Path, out_dir: Path, overrides_file: str | None = None):
     tpl_path = templates_dir / f"{rulebook}.textfsm"
@@ -84,18 +103,49 @@ def emit_rules(rulebook: str, templates_dir: Path, out_dir: Path, overrides_file
         value_to_label.update(load_plain_overrides(Path(overrides_file)))
 
     # 4) Build rules (regex source + label)
+    # Allow custom ordering for specific rulebooks to reduce collisions.
+    def priority_for(rulebook: str, vname: str) -> tuple:
+        if rulebook == "qbo_account":
+            # Higher priority (lower tuple sorts first)
+            buckets = [
+                {"CDTFA_TAXES", "TAXES_CDTFA_TAX", "DIRECT_LABOR_COSTS", "DIRECT_LABOR_COST",
+                "COST_OF_PRODUCTION_DIRECT_LABOR_COSTS", "DELIVERY_COGS_LABOR_COST"},
+                {"DELIVERY_REVENUE_CANNABIS"},
+                {"DISTRIBUTION_REVENUE"},
+                {"DELIVERY_REVENUE"},
+                {"DUE_FROM_TPH786", "DUE_FROM_HAH_7_LLC", "INTERCOMPANY_DUE_TO_DMD"},
+                {"EAST_WEST_BANK_3447", "NORTH_BAY_CREDIT_UNION_CHECKING_2035"},
+                {"BANK_CHARGES_AND_FEES", "BANK_ARMOR_FEES"},
+            ]
+            for i, s in enumerate(buckets):
+                if vname in s:
+                    return (i, vname)
+            return (len(buckets), vname)
+        return (0, vname)
+
+    def longest_alt_len(raw_alt: str) -> int:
+        src = raw_alt.strip()
+        if src.startswith("(") and src.endswith(")"):
+            src = src[1:-1]
+        parts = src.split("|")
+        return max((len(p) for p in parts if p), default=0)
+
     items = []
-    for vname in sorted(name_to_alts.keys()):
-        raw_alt = name_to_alts[vname]
+    for vname, raw_alt in name_to_alts.items():
         regex_src = build_runtime_regex_src(raw_alt)
         label = value_to_label.get(vname, vname)  # fallback to ValueName
-        items.append((regex_src, label))
+        prio_bucket = priority_for(rulebook, vname)[0]
+        spec_len = longest_alt_len(raw_alt)
+        items.append((prio_bucket, -spec_len, vname, regex_src, label))
+
+    # final sort: by priority bucket, by longest alternant desc, by ValueName
+    items.sort(key=lambda t: (t[0], t[1], t[2]))
 
     # 5) Write out/<rulebook>_rules.py (avoid duplicating backslashes)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_py = out_dir / f"{rulebook}_rules.py"
     lines = ["import re", "_RULES = ["]
-    for src, label in items:
+    for _, _, _, src, label in items:
         label_literal = label.replace("'", "\\'")
         lines.append(f"    (re.compile(r'{src}'), '{label_literal}'),")
     lines.append("]")
