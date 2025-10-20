@@ -55,9 +55,9 @@ data/base.csv
 ### Step 2. Bootstrap a template
 Creates the base TextFSM file with one entry per label.
 
-Example for `payee_vendor`:
+Example:
 ```bash
-docker compose run --rm rulegen python scripts/bootstrap_rulebook.py --rulebook payee_vendor --csv data/base.csv
+docker compose run --rm rulegen python scripts/bootstrap_rulebook.py --rulebook qbo_sub_account --csv data/base.csv
 ```
 
 This generates:
@@ -73,7 +73,7 @@ The file will contain a `Start` block with one placeholder per label.
 Use the statistical suggestion engine to build grouped variants automatically for each label.
 
 ```bash
-docker compose run --rm rulegen python scripts/suggest_values.py --rulebook payee_vendor --csv data/base.csv
+docker compose run --rm rulegen python scripts/suggest_values.py --rulebook qbo_sub_account --csv data/base.csv
 ```
 
 #### Options:
@@ -103,7 +103,7 @@ Start
 Converts the `.textfsm` template into a pure Python `_RULES` list used by Airflow rulebooks.
 
 ```bash
-docker compose run --rm rulegen python scripts/emit_regex.py --rulebook payee_vendor
+docker compose run --rm rulegen python scripts/emit_regex.py --rulebook qbo_sub_account
 ```
 
 Creates:
@@ -126,7 +126,7 @@ _RULES = [
 Compare generated rules against your labeled dataset.
 
 ```bash
-docker compose run --rm rulegen python scripts/eval_rulebook.py --rulebook payee_vendor --csv data/base.csv --rules out/payee_vendor_rules.py
+docker compose run --rm rulegen python scripts/eval_rulebook.py --rulebook qbo_sub_account --csv data/base.csv --rules out/qbo_sub_account_rules.py
 ```
 
 Outputs example:

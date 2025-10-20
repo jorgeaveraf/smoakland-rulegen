@@ -9,20 +9,29 @@ from utils import build_search_text, normalize_text
 WORD_RE = re.compile(r"[A-Z0-9][A-Z0-9&/\-\._ ]{1,}")  # short uppercased tokens/phrases (after normalize)
 MAX_NAME_LEN = 40
 
-STOPWORDS = {
-    # súper genéricos bancarios
-    "ACH", "DEPOSIT", "WITHDRAWAL", "CREDIT", "DEBIT", "TRANSFER",
-    "PAYMENT", "PAID", "CHECK", "SALE", "WEB", "ONLINE", "FEE",
-    # categorías/columnas genéricas que aparecían en tu CSV
-    "MERCHANDISE", "INVENTORY", "PROFESSIONAL SERVICES",
-    "BILLS & UTILITIES", "OTHER SERVICES", "OFFICE & SHIPPING",
-    "GAS/AUTOMOTIVE", "TRAVEL",
-    # frases de logs bancarios recurrentes
-    "SHARE DRAFT CLEARING", "CASH DEPOSIT", "DEPOSITBRIDGEPLUS",
-    "EXTERNAL DEPOSIT", "ACH CREDIT RECEIVED", "ACH DEBIT",
+# Bank noise and common words to ignore
+STOPWORDS_GENERAL = {
+    "ACH","DEPOSIT","WITHDRAWAL","CREDIT","DEBIT","TRANSFER",
+    "PAYMENT","PAID","CHECK","SALE","WEB","ONLINE","FEE","FEES",
+    "MERCHANDISE","INVENTORY","PROFESSIONAL SERVICES",
+    "BILLS & UTILITIES","OTHER SERVICES","OFFICE & SHIPPING",
+    "GAS/AUTOMOTIVE","TRAVEL",
+    "SHARE DRAFT CLEARING","CASH DEPOSIT","DEPOSITBRIDGEPLUS",
+    "EXTERNAL DEPOSIT","ACH CREDIT RECEIVED","ACH DEBIT",
     "PAYMENT THANK YOU - WEB",
-    # abreviaturas/eventos demasiado frecuentes
-    "BILL", "MANUAL", "GPS", "TAX",
+    "BILL","MANUAL","GPS","TAX","PMT",
+}
+
+# Move common QBO-specific noise words here
+QBO_STOP_EXTRA = {
+    "EXTERNAL","SHARE","DRAFT","CLEARING","EPAY","WITHDRAWAL",
+    "CCD","EPMT","BUSINESSES","WWW","PAYROLL","SERVICE",
+}
+
+# Map rulebook to stopwords
+STOPWORDS_BY_RB = {
+    "qbo_account": STOPWORDS_GENERAL | QBO_STOP_EXTRA,
+    
 }
 
 # ---------- Sanitize + unique mapping helpers ----------
@@ -73,35 +82,39 @@ def _save_label_map(path: Path, mapping: dict[str, str]) -> None:
     path.write_text(json.dumps(mapping, ensure_ascii=False, indent=2))
 
 # ---------- Tokenization ----------
-def tokenize(txt: str) -> list[str]:
+def tokenize(txt: str, rb: str | None = None) -> list[str]:
     if not isinstance(txt, str) or not txt:
         return []
-    toks = []
+    stopset = STOPWORDS_BY_RB.get(rb or "", STOPWORDS_GENERAL)
+    toks: list[str] = []
     for m in WORD_RE.findall(txt):
         t = m.strip()
         if len(t) < 3:
             continue
-        if t in STOPWORDS:
+        if t in stopset:
             continue
         toks.append(t)
     return toks
 
 def top_discriminative_phrases(df_pos: pd.Series,
                                df_neg: pd.Series,
+                               rb: str,
                                topk=20,
                                min_len=3,
                                min_pos=5,
                                min_ratio=3.0):
+    """
+    Frequent tokens in positives and rare in negatives.
+    Filters: min_pos occurrences in positives and ratio >= min_ratio.
+    """
     from collections import Counter
-
-    pos_toks = Counter()
-    neg_toks = Counter()
+    pos_toks, neg_toks = Counter(), Counter()
 
     for t in df_pos:
-        for tok in tokenize(t):
+        for tok in tokenize(t, rb):
             pos_toks[tok] += 1
     for t in df_neg:
-        for tok in tokenize(t):
+        for tok in tokenize(t, rb):
             neg_toks[tok] += 1
 
     scored = []
@@ -220,12 +233,13 @@ def main():
         pos = df[df[target] == label]["__text__"]
         neg = df[df[target] != label]["__text__"]
         scored = top_discriminative_phrases(
-            pos, neg, topk=args.topk, min_pos=args.min_pos, min_ratio=args.min_ratio
+            pos, neg, rb=rb, topk=args.topk, min_pos=args.min_pos, min_ratio=args.min_ratio
         )
         tokens = [tok for _, _, _, tok in scored]
         if tokens:
             suggestions[label] = tokens
 
+    # --- print suggestions ---
     for lbl, toks in suggestions.items():
         print(f"\n[{lbl}] {len(toks)} suggestions:")
         for t in toks:
